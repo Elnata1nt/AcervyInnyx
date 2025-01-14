@@ -33,12 +33,6 @@ const handleSearch = () => {
   currentPage.value = 1
 }
 
-const formatDate = (date: string) => {
-  const d = new Date(date)
-  d.setMinutes(d.getMinutes() + d.getTimezoneOffset())
-  return d.toLocaleDateString()
-}
-
 const formatPrice = (price: number) => {
   return price.toLocaleString('pt-BR', {
     style: 'currency',
