@@ -15,12 +15,12 @@ const {
 } = useProducts()
 
 const categories = [
-  'Eletrônicos',
-  'Roupas',
-  'Alimentos',
-  'Bebidas',
-  'Cosméticos',
-  'Livros',
+  'Romance',
+  'Drama',
+  'Ação',
+  'Terror',
+  'Fantasia',
+  'Religioso',
   'Outros'
 ]
 
@@ -51,12 +51,19 @@ const openModal = (product: Product, edit = false) => {
   isEditing.value = edit
   if (edit) {
     editForm.value = { ...product }
+    
+    // Verifica se a data é válida antes de manipular
     const date = new Date(product.expiryDate)
-    date.setMinutes(date.getMinutes() + date.getTimezoneOffset())
-    editForm.value.expiryDate = date.toISOString().split('T')[0]
+    if (!isNaN(date.getTime())) { // Verifica se a data é válida
+      date.setMinutes(date.getMinutes() + date.getTimezoneOffset())
+      editForm.value.expiryDate = date.toISOString().split('T')[0]
+    } else {
+      editForm.value.expiryDate = '' // Se inválida, define como string vazia ou outro valor padrão
+    }
   }
   isModalOpen.value = true
 }
+
 
 const closeModal = () => {
   isModalOpen.value = false
@@ -71,6 +78,7 @@ const handleUpdate = () => {
     closeModal()
   }
 }
+
 
 const handleDelete = (id: string) => {
   if (confirm('Tem certeza que deseja excluir este produto?')) {
@@ -90,12 +98,12 @@ const goToPage = (page: number) => {
   <div class="space-y-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <h1 class="text-2xl font-bold">Lista de Produtos</h1>
-      <router-link
-        to="/dashboard/products/new"
-        class="inline-flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-      >
+      <router-link to="/dashboard/products/new"
+        class="inline-flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+          <path fill-rule="evenodd"
+            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+            clip-rule="evenodd" />
         </svg>
         <span>Novo Produto</span>
       </router-link>
@@ -108,26 +116,18 @@ const goToPage = (page: number) => {
           <label for="search" class="block text-sm font-medium text-gray-700 mb-1">
             Nome do Produto
           </label>
-          <input
-            id="search"
-            v-model="searchTerm"
-            type="text"
+          <input id="search" v-model="searchTerm" type="text"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Digite o nome do produto"
-            @input="handleSearch"
-          />
+            placeholder="Digite o nome do produto" @input="handleSearch" />
         </div>
 
         <div>
           <label for="category" class="block text-sm font-medium text-gray-700 mb-1">
             Categoria
           </label>
-          <select
-            id="category"
-            v-model="selectedCategory"
+          <select id="category" v-model="selectedCategory"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            @change="handleSearch"
-          >
+            @change="handleSearch">
             <option value="">Todas as categorias</option>
             <option v-for="category in categories" :key="category" :value="category">
               {{ category }}
@@ -139,16 +139,9 @@ const goToPage = (page: number) => {
           <label for="price" class="block text-sm font-medium text-gray-700 mb-1">
             Preço Máximo
           </label>
-          <input
-            id="price"
-            v-model="maxPrice"
-            type="number"
-            min="0"
-            step="0.01"
+          <input id="price" v-model="maxPrice" type="number" min="0" step="0.01"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="R$ 0,00"
-            @input="handleSearch"
-          />
+            placeholder="R$ 0,00" @input="handleSearch" />
         </div>
       </div>
     </div>
@@ -169,9 +162,6 @@ const goToPage = (page: number) => {
                 Preço
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Validade
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ações
               </th>
             </tr>
@@ -186,10 +176,7 @@ const goToPage = (page: number) => {
                   <div class="ml-4">
                     <div class="text-sm font-medium text-gray-900">{{ product.name }}</div>
                     <div v-if="product.description.length > 50" class="mt-1">
-                      <button
-                        @click="openModal(product)"
-                        class="text-sm text-blue-600 hover:text-blue-700"
-                      >
+                      <button @click="openModal(product)" class="text-sm text-blue-600 hover:text-blue-700">
                         Ver descrição
                       </button>
                     </div>
@@ -206,20 +193,11 @@ const goToPage = (page: number) => {
                 {{ formatPrice(product.price) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ formatDate(product.expiryDate) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 <div class="flex space-x-2">
-                  <button
-                    @click="openModal(product, true)"
-                    class="text-blue-600 hover:text-blue-700"
-                  >
+                  <button @click="openModal(product, true)" class="text-blue-600 hover:text-blue-700">
                     Editar
                   </button>
-                  <button
-                    @click="handleDelete(product.id)"
-                    class="text-red-600 hover:text-red-700"
-                  >
+                  <button @click="handleDelete(product.id)" class="text-red-600 hover:text-red-700">
                     Excluir
                   </button>
                 </div>
@@ -235,67 +213,45 @@ const goToPage = (page: number) => {
 
       <!-- Pagination -->
       <div v-if="totalPages > 1" class="px-6 py-4 flex justify-center items-center space-x-2">
-        <button
-          @click="goToPage(currentPage - 1)"
-          :disabled="currentPage === 1"
-          class="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
+          class="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
           Anterior
         </button>
 
         <template v-for="pageNum in totalPages" :key="pageNum">
           <!-- Show first page -->
-          <button
-            v-if="pageNum === 1"
-            @click="goToPage(pageNum)"
-            class="px-3 py-1 rounded-md"
-            :class="currentPage === pageNum ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
-          >
+          <button v-if="pageNum === 1" @click="goToPage(pageNum)" class="px-3 py-1 rounded-md"
+            :class="currentPage === pageNum ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">
             {{ pageNum }}
           </button>
 
           <!-- Show ellipsis for skipped pages after first page -->
-          <span
-            v-if="pageNum === 2 && currentPage > 4"
-            class="px-2"
-          >
+          <span v-if="pageNum === 2 && currentPage > 4" class="px-2">
             ...
           </span>
 
           <!-- Show current page and surrounding pages -->
           <button
             v-if="pageNum >= currentPage - 1 && pageNum <= currentPage + 1 && pageNum !== 1 && pageNum !== totalPages"
-            @click="goToPage(pageNum)"
-            class="px-3 py-1 rounded-md"
-            :class="currentPage === pageNum ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
-          >
+            @click="goToPage(pageNum)" class="px-3 py-1 rounded-md"
+            :class="currentPage === pageNum ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">
             {{ pageNum }}
           </button>
 
           <!-- Show ellipsis for skipped pages before last page -->
-          <span
-            v-if="pageNum === totalPages - 1 && currentPage < totalPages - 3"
-            class="px-2"
-          >
+          <span v-if="pageNum === totalPages - 1 && currentPage < totalPages - 3" class="px-2">
             ...
           </span>
 
           <!-- Show last page -->
-          <button
-            v-if="pageNum === totalPages"
-            @click="goToPage(pageNum)"
-            class="px-3 py-1 rounded-md"
-            :class="currentPage === pageNum ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
-          >
+          <button v-if="pageNum === totalPages" @click="goToPage(pageNum)" class="px-3 py-1 rounded-md"
+            :class="currentPage === pageNum ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">
             {{ pageNum }}
           </button>
         </template>
 
-        <button
-          @click="goToPage(currentPage + 1)"
-          :disabled="currentPage === totalPages"
-          class="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages"
+          class="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
           Próxima
         </button>
       </div>
@@ -309,7 +265,8 @@ const goToPage = (page: number) => {
             {{ isEditing ? 'Editar Produto' : selectedProduct?.name }}
           </h3>
           <button @click="closeModal" class="text-gray-500 hover:text-gray-700">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -333,10 +290,6 @@ const goToPage = (page: number) => {
               <p class="text-sm text-gray-500">Preço</p>
               <p class="font-medium">{{ formatPrice(selectedProduct.price) }}</p>
             </div>
-            <div>
-              <p class="text-sm text-gray-500">Data de Validade</p>
-              <p class="font-medium">{{ formatDate(selectedProduct.expiryDate) }}</p>
-            </div>
           </div>
         </div>
 
@@ -344,34 +297,21 @@ const goToPage = (page: number) => {
         <form v-else-if="isEditing" @submit.prevent="handleUpdate" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-            <input
-              v-model="editForm.name"
-              type="text"
-              required
-              maxlength="50"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <input v-model="editForm.name" type="text" required maxlength="50"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-            <textarea
-              v-model="editForm.description"
-              required
-              maxlength="200"
-              rows="3"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            ></textarea>
+            <textarea v-model="editForm.description" required maxlength="200" rows="3"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-              <select
-                v-model="editForm.category"
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
+              <select v-model="editForm.category" required
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 <option v-for="category in categories" :key="category" :value="category">
                   {{ category }}
                 </option>
@@ -380,39 +320,17 @@ const goToPage = (page: number) => {
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Preço</label>
-              <input
-                v-model="editForm.price"
-                type="number"
-                required
-                min="0"
-                step="0.01"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Data de Validade</label>
-              <input
-                v-model="editForm.expiryDate"
-                type="date"
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+              <input v-model="editForm.price" type="number" required min="0" step="0.01"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
             </div>
           </div>
 
           <div class="flex justify-end space-x-2">
-            <button
-              type="button"
-              @click="closeModal"
-              class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
+            <button type="button" @click="closeModal"
+              class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
               Cancelar
             </button>
-            <button
-              type="submit"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
               Salvar
             </button>
           </div>

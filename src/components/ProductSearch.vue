@@ -9,12 +9,12 @@ const isFormVisible = ref(false)
 const isButtonVisible = ref(false)
 
 const categories = [
-  'Eletrônicos',
-  'Roupas',
-  'Alimentos',
-  'Bebidas',
-  'Cosméticos',
-  'Livros',
+  'Romance',
+  'Drama',
+  'Ação',
+  'Terror',
+  'Fantasia',
+  'Religioso',
   'Outros'
 ]
 
