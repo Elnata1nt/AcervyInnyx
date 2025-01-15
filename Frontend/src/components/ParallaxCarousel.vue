@@ -4,23 +4,23 @@ import { ref, onMounted, onUnmounted } from 'vue'
 const slides = [
   {
     id: 1,
-    title: 'Romance',
-    description: 'Descubra as últimas linhas romanticas do amor',
-    image: 'https://i.pinimg.com/736x/91/9d/ad/919dad52c0f041b6442c8b452bd6111a.jpg?auto=format&fit=crop&q=80&w=1000',
+    title: 'Eletrônicos',
+    description: 'Descubra as últimas novidades em tecnologia',
+    image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&q=80&w=1000',
     color: 'from-blue-500'
   },
   {
     id: 2,
-    title: 'Qualidade de vida',
-    description: 'Ler muda pensmanetos e futuro',
-    image: 'https://i.pinimg.com/474x/61/fd/fa/61fdfaf6f4f51f98df7ee9c5b4787733.jpg?auto=format&fit=crop&q=80&w=1000',
+    title: 'Moda',
+    description: 'Estilo e conforto para todos os momentos',
+    image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&q=80&w=1000',
     color: 'from-purple-500'
   },
   {
     id: 3,
-    title: 'Estudos',
-    description: 'Complemente seu conhecimento com os melhores conteudos',
-    image: 'https://i.pinimg.com/474x/6b/00/8c/6b008c24fc7bfe428c50452a3b48da17.jpg?auto=format&fit=crop&q=80&w=1000',
+    title: 'Acessórios',
+    description: 'Complemente seu visual com nossa coleção',
+    image: 'https://images.unsplash.com/photo-1506152983158-b4a74a01c721?auto=format&fit=crop&q=80&w=1000',
     color: 'from-pink-500'
   }
 ]

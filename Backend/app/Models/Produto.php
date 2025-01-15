@@ -10,16 +10,21 @@ class Produto extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'description',
-        'price',
-        'expiration_date',
-        'image',
-        'categoria_id',
+        'nome', 'descricao', 'preco', 'data_validade', 'categoria_id', 'imagem'
     ];
+
+    public function getImagemUrlAttribute()
+    {
+        return asset('storage/images/' . $this->imagem);
+    }
+
+    public function setImagemAttribute($value)
+    {
+        $this->attributes['imagem'] = 'images/' . $value;
+    }
 
     public function categoria()
     {
-        return $this->belongsTo(Categoria::class);
+        return $this->belongsTo(Categoria::class, 'categoria_id');
     }
 }

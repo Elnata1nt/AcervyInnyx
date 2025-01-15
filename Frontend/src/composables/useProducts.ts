@@ -1,4 +1,5 @@
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import axios from 'axios'
 
 export interface Product {
   id: string
@@ -11,19 +12,28 @@ export interface Product {
   createdAt: string
 }
 
-const PRODUCTS_KEY = 'products'
 const PAGE_SIZE = 5
+const API_URL = 'http://127.0.0.1:8000/api/produtos'
 
 export function useProducts() {
-  const products = ref<Product[]>(JSON.parse(localStorage.getItem(PRODUCTS_KEY) || '[]'))
+  const products = ref<Product[]>([])
   const currentPage = ref(1)
   const searchTerm = ref('')
   const selectedCategory = ref('')
   const maxPrice = ref<number | null>(null)
 
-  watch(products, (newProducts) => {
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(newProducts))
-  }, { deep: true })
+  const loadProducts = async () => {
+    try {
+      const response = await axios.get(API_URL)
+      products.value = response.data
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error)
+    }
+  }
+
+  onMounted(() => {
+    loadProducts()
+  })
 
   const filteredProducts = computed(() => {
     return products.value.filter(product => {
@@ -42,24 +52,34 @@ export function useProducts() {
     return filteredProducts.value.slice(start, end)
   })
 
-  const addProduct = (product: Omit<Product, 'id' | 'createdAt'>) => {
-    const newProduct = {
-      ...product,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString()
-    }
-    products.value.push(newProduct)
-  }
-
-  const updateProduct = (id: string, updatedProduct: Partial<Product>) => {
-    const index = products.value.findIndex(p => p.id === id)
-    if (index !== -1) {
-      products.value[index] = { ...products.value[index], ...updatedProduct }
+  const addProduct = async (product: Omit<Product, 'id' | 'createdAt'>) => {
+    try {
+      const response = await axios.post(API_URL, product)
+      products.value.push(response.data)
+    } catch (error) {
+      console.error('Erro ao adicionar produto:', error)
     }
   }
 
-  const deleteProduct = (id: string) => {
-    products.value = products.value.filter(p => p.id !== id)
+  const updateProduct = async (id: string, updatedProduct: Partial<Product>) => {
+    try {
+      const response = await axios.put(`${API_URL}/${id}`, updatedProduct)
+      const index = products.value.findIndex(p => p.id === id)
+      if (index !== -1) {
+        products.value[index] = { ...products.value[index], ...response.data }
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar produto:', error)
+    }
+  }
+
+  const deleteProduct = async (id: string) => {
+    try {
+      await axios.delete(`${API_URL}/${id}`)
+      products.value = products.value.filter(p => p.id !== id)
+    } catch (error) {
+      console.error('Erro ao excluir produto:', error)
+    }
   }
 
   return {

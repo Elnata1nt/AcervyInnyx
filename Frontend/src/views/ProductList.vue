@@ -1,335 +1,232 @@
-<script setup lang="ts">
-import { ref } from 'vue'
-import { useProducts } from '../composables/useProducts'
-import type { Product } from '../composables/useProducts'
-
-const {
-  paginatedProducts,
-  totalPages,
-  currentPage,
-  searchTerm,
-  selectedCategory,
-  maxPrice,
-  updateProduct,
-  deleteProduct
-} = useProducts()
-
-const categories = [
-  'Romance',
-  'Drama',
-  'Ação',
-  'Terror',
-  'Fantasia',
-  'Religioso',
-  'Outros'
-]
-
-const selectedProduct = ref<Product | null>(null)
-const isModalOpen = ref(false)
-const isEditing = ref(false)
-const editForm = ref<Partial<Product>>({})
-
-const handleSearch = () => {
-  currentPage.value = 1
-}
-
-const formatPrice = (price: number) => {
-  return price.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  })
-}
-
-const openModal = (product: Product, edit = false) => {
-  selectedProduct.value = product
-  isEditing.value = edit
-  if (edit) {
-    editForm.value = { ...product }
-    
-    // Verifica se a data é válida antes de manipular
-    const date = new Date(product.expiryDate)
-    if (!isNaN(date.getTime())) { // Verifica se a data é válida
-      date.setMinutes(date.getMinutes() + date.getTimezoneOffset())
-      editForm.value.expiryDate = date.toISOString().split('T')[0]
-    } else {
-      editForm.value.expiryDate = '' // Se inválida, define como string vazia ou outro valor padrão
-    }
-  }
-  isModalOpen.value = true
-}
-
-
-const closeModal = () => {
-  isModalOpen.value = false
-  selectedProduct.value = null
-  isEditing.value = false
-  editForm.value = {}
-}
-
-const handleUpdate = () => {
-  if (selectedProduct.value && editForm.value) {
-    updateProduct(selectedProduct.value.id, editForm.value)
-    closeModal()
-  }
-}
-
-
-const handleDelete = (id: string) => {
-  if (confirm('Tem certeza que deseja excluir este produto?')) {
-    deleteProduct(id)
-    closeModal()
-  }
-}
-
-const goToPage = (page: number) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-  }
-}
-</script>
-
 <template>
-  <div class="space-y-6">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <h1 class="text-2xl font-bold">Lista de Produtos</h1>
-      <router-link to="/dashboard/products/new"
-        class="inline-flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd"
-            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-            clip-rule="evenodd" />
-        </svg>
-        <span>Novo Produto</span>
-      </router-link>
-    </div>
+  <div>
+    <!-- Botão de Novo -->
+    <button @click="showCreateForm = !showCreateForm" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+      Novo
+    </button>
 
-    <!-- Search Filters -->
-    <div class="bg-white rounded-lg shadow-sm p-6">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Formulário de Criação -->
+    <div v-if="showCreateForm" class="mt-6 p-4 border rounded-lg shadow-lg bg-white">
+      <h2 class="text-xl font-bold mb-4">{{ isEditing ? 'Editar Produto' : 'Criar Novo Produto' }}</h2>
+
+      <form @submit.prevent="handleCreate" class="space-y-4">
         <div>
-          <label for="search" class="block text-sm font-medium text-gray-700 mb-1">
-            Nome do Produto
-          </label>
-          <input id="search" v-model="searchTerm" type="text"
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+          <input
+            v-model="createForm.name"
+            type="text"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Digite o nome do produto" @input="handleSearch" />
+            placeholder="Nome do produto"
+            required
+          />
         </div>
 
         <div>
-          <label for="category" class="block text-sm font-medium text-gray-700 mb-1">
-            Categoria
-          </label>
-          <select id="category" v-model="selectedCategory"
+          <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+          <textarea
+            v-model="createForm.description"
+            rows="4"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            @change="handleSearch">
-            <option value="">Todas as categorias</option>
-            <option v-for="category in categories" :key="category" :value="category">
-              {{ category }}
-            </option>
-          </select>
+            placeholder="Descrição do produto"
+            required
+          ></textarea>
         </div>
 
-        <div>
-          <label for="price" class="block text-sm font-medium text-gray-700 mb-1">
-            Preço Máximo
-          </label>
-          <input id="price" v-model="maxPrice" type="number" min="0" step="0.01"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="R$ 0,00" @input="handleSearch" />
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+            <select
+              v-model="createForm.category"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+            >
+              <option value="">Selecione uma categoria</option>
+              <option v-for="category in categories" :key="category.id" :value="category.id">
+                {{ category.name }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Preço</label>
+            <input
+              v-model="createForm.price"
+              type="number"
+              min="0"
+              step="0.01"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="R$ 0,00"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Data de Validade</label>
+            <input
+              v-model="createForm.expiryDate"
+              type="date"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Products Table -->
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Produto
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Categoria
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Preço
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ações
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="product in paginatedProducts" :key="product.id">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="h-10 w-10 flex-shrink-0">
-                    <img :src="product.image" class="h-10 w-10 rounded-full object-cover" />
-                  </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">{{ product.name }}</div>
-                    <div v-if="product.description.length > 50" class="mt-1">
-                      <button @click="openModal(product)" class="text-sm text-blue-600 hover:text-blue-700">
-                        Ver descrição
-                      </button>
-                    </div>
-                    <div v-else class="text-sm text-gray-500">{{ product.description }}</div>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                  {{ product.category }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ formatPrice(product.price) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <div class="flex space-x-2">
-                  <button @click="openModal(product, true)" class="text-blue-600 hover:text-blue-700">
-                    Editar
-                  </button>
-                  <button @click="handleDelete(product.id)" class="text-red-600 hover:text-red-700">
-                    Excluir
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div v-if="paginatedProducts.length === 0" class="p-4 text-center text-gray-500">
-        Nenhum produto encontrado.
-      </div>
-
-      <!-- Pagination -->
-      <div v-if="totalPages > 1" class="px-6 py-4 flex justify-center items-center space-x-2">
-        <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
-          class="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
-          Anterior
-        </button>
-
-        <template v-for="pageNum in totalPages" :key="pageNum">
-          <!-- Show first page -->
-          <button v-if="pageNum === 1" @click="goToPage(pageNum)" class="px-3 py-1 rounded-md"
-            :class="currentPage === pageNum ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">
-            {{ pageNum }}
-          </button>
-
-          <!-- Show ellipsis for skipped pages after first page -->
-          <span v-if="pageNum === 2 && currentPage > 4" class="px-2">
-            ...
-          </span>
-
-          <!-- Show current page and surrounding pages -->
+        <div class="flex justify-end gap-4 mt-4">
           <button
-            v-if="pageNum >= currentPage - 1 && pageNum <= currentPage + 1 && pageNum !== 1 && pageNum !== totalPages"
-            @click="goToPage(pageNum)" class="px-3 py-1 rounded-md"
-            :class="currentPage === pageNum ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">
-            {{ pageNum }}
+            type="button"
+            @click="showCreateForm = false"
+            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+          >
+            Cancelar
           </button>
-
-          <!-- Show ellipsis for skipped pages before last page -->
-          <span v-if="pageNum === totalPages - 1 && currentPage < totalPages - 3" class="px-2">
-            ...
-          </span>
-
-          <!-- Show last page -->
-          <button v-if="pageNum === totalPages" @click="goToPage(pageNum)" class="px-3 py-1 rounded-md"
-            :class="currentPage === pageNum ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">
-            {{ pageNum }}
+          <button
+            type="submit"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Salvar
           </button>
-        </template>
-
-        <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages"
-          class="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
-          Próxima
-        </button>
-      </div>
+        </div>
+      </form>
     </div>
 
-    <!-- Product Modal -->
-    <div v-if="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg max-w-2xl w-full p-6">
-        <div class="flex justify-between items-start mb-4">
-          <h3 class="text-xl font-bold">
-            {{ isEditing ? 'Editar Produto' : selectedProduct?.name }}
-          </h3>
-          <button @click="closeModal" class="text-gray-500 hover:text-gray-700">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <!-- View Mode -->
-        <div v-if="!isEditing && selectedProduct" class="space-y-4">
-          <div class="flex items-start space-x-4">
-            <img :src="selectedProduct.image" class="w-24 h-24 rounded-lg object-cover" />
-            <div>
-              <h4 class="font-medium">{{ selectedProduct.name }}</h4>
-              <p class="text-gray-600 mt-2">{{ selectedProduct.description }}</p>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <p class="text-sm text-gray-500">Categoria</p>
-              <p class="font-medium">{{ selectedProduct.category }}</p>
-            </div>
-            <div>
-              <p class="text-sm text-gray-500">Preço</p>
-              <p class="font-medium">{{ formatPrice(selectedProduct.price) }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Edit Mode -->
-        <form v-else-if="isEditing" @submit.prevent="handleUpdate" class="space-y-4">
+    <!-- Lista de Produtos -->
+    <div v-if="!showCreateForm" class="mt-6">
+      <h2 class="text-xl font-bold mb-4">Lista de Produtos</h2>
+      <ul class="space-y-4">
+        <li v-for="(product, index) in filteredProducts" :key="index" class="p-4 border rounded-lg shadow-sm">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-            <input v-model="editForm.name" type="text" required maxlength="50"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-            <textarea v-model="editForm.description" required maxlength="200" rows="3"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-              <select v-model="editForm.category" required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option v-for="category in categories" :key="category" :value="category">
-                  {{ category }}
-                </option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Preço</label>
-              <input v-model="editForm.price" type="number" required min="0" step="0.01"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            <h3 class="text-lg font-semibold">{{ product.name || 'Sem Nome' }}</h3>
+            <p class="text-gray-600">{{ product.description || 'Sem Descrição' }}</p>
+            <p class="text-gray-800">
+              {{ getCategoryName(product.category) || 'Sem Categoria' }} | R$ {{ parseFloat(product.price).toFixed(2).replace('.', ',') }}
+            </p>
+            <!-- Botões Editar e Excluir -->
+            <div class="mt-2 flex gap-4">
+              <button @click="editProduct(product)" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+                Editar
+              </button>
+              <button @click="deleteProduct(product.id)" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                Excluir
+              </button>
             </div>
           </div>
-
-          <div class="flex justify-end space-x-2">
-            <button type="button" @click="closeModal"
-              class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-              Cancelar
-            </button>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              Salvar
-            </button>
-          </div>
-        </form>
-      </div>
+        </li>
+      </ul>
     </div>
   </div>
 </template>
+
+<script>
+import axios from "axios";
+
+export default {
+  data() {
+    return {
+      showCreateForm: false,
+      isEditing: false,
+      createForm: {
+        id: null,  // Adiciona o campo 'id' para identificar um produto existente ao editar
+        name: "",
+        description: "",
+        category: "",
+        price: 0,
+        expiryDate: ""
+      },
+      categories: [],  // Agora as categorias serão carregadas do backend
+      products: [],
+      filteredProducts: []
+    };
+  },
+  mounted() {
+    this.loadProducts();
+    this.loadCategories(); // Carrega as categorias no início
+  },
+  methods: {
+    async loadProducts() {
+      try {
+        const response = await axios.get("http://127.0.0.1:8000/api/produtos");
+        console.log("Resposta da API:", response.data);
+        this.products = response.data;
+        this.filteredProducts = this.products;
+      } catch (error) {
+        console.error("Erro ao carregar produtos:", error);
+      }
+    },
+    async loadCategories() {
+      try {
+        const response = await axios.get("http://127.0.0.1:8000/api/categorias");
+        this.categories = response.data;  // Supondo que a resposta contenha categorias
+      } catch (error) {
+        console.error("Erro ao carregar categorias:", error);
+      }
+    },
+
+    async handleCreate() {
+      if (!this.createForm.name || !this.createForm.description || !this.createForm.category || this.createForm.price <= 0) {
+        alert('Por favor, preencha todos os campos.');
+        return;
+      }
+
+      try {
+        const response = this.isEditing
+          ? await axios.put(`http://127.0.0.1:8000/api/produtos/${this.createForm.id}`, this.createForm)
+          : await axios.post("http://127.0.0.1:8000/api/produtos", this.createForm);
+
+        if (this.isEditing) {
+          const index = this.products.findIndex(p => p.id === this.createForm.id);
+          this.products[index] = response.data;  // Atualiza o produto editado
+        } else {
+          this.products.push(response.data);  // Adiciona o novo produto
+        }
+
+        this.filteredProducts = this.products;
+        this.resetForm();
+        this.showCreateForm = false;
+      } catch (error) {
+        console.error("Erro ao criar/editar produto:", error);
+      }
+    },
+
+    resetForm() {
+      this.createForm = {
+        id: null,
+        name: "",
+        description: "",
+        category: "",
+        price: 0,
+        expiryDate: ""
+      };
+      this.isEditing = false;
+    },
+
+    // Método para carregar os dados de um produto para edição
+    editProduct(product) {
+      this.createForm = {
+        id: product.id,
+        name: product.name || "",
+        description: product.description || "",
+        category: product.category || "",
+        price: product.price || 0,
+        expiryDate: product.expiryDate || ""
+      };
+      this.isEditing = true;
+      this.showCreateForm = true;  // Exibe o formulário de criação com os dados do produto
+    },
+
+    async deleteProduct(productId) {
+      try {
+        await axios.delete(`http://127.0.0.1:8000/api/produtos/${productId}`);
+        this.products = this.products.filter(p => p.id !== productId);
+        this.filteredProducts = this.products;
+      } catch (error) {
+        console.error("Erro ao excluir produto:", error);
+      }
+    },
+
+    getCategoryName(categoryId) {
+      const category = this.categories.find(c => c.id === categoryId);
+      return category ? category.name : 'Sem Categoria';
+    }
+  }
+};
+</script>

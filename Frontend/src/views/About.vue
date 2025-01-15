@@ -81,7 +81,7 @@ const stats = ref([
           Com a Acervy.by, você terá o mundo dos livros ao alcance dos seus dedos.
         </p>
         <div class="text-center">
-          <a href="#" class="bg-indigo-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-300">
+          <a href="/auth" class="bg-indigo-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-300">
             Comece sua jornada
           </a>
         </div>
